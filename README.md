@@ -4,7 +4,7 @@ Meteor Master AI Launcher - Quickly launch Meteor Master AI from the command lin
 
 **About MeteorMaster**: MeteorMaster is a powerful meteor detection and analysis tool. Visit the official website: https://photohelper.cn/meteormaster
 
-[English Version](README.md) | [中文版本文档](README.zh-CN.md)
+[English Version](https://github.com/mordom0404/mma-bridge/blob/master/README.md) | [中文版本文档](https://github.com/mordom0404/mma-bridge/blob/master/README.zh-CN.md)
 
 ## Installation
 
