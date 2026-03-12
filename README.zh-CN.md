@@ -15,23 +15,25 @@ npm install mma-bridge
 ### 检查是否安装了 Meteor Master AI
 
 ```bash
-mma-bridge check
+mma check
 ```
 
 ### 启动 Meteor Master AI
 
 ```bash
-mma-bridge start
+mma start
 ```
 
 ## 工作原理
 
 ### Windows
+
 1. 通过 PowerShell 的 `Get-StartApps` 命令检查系统是否安装了 Meteor Master AI
 2. 如果已安装，提取应用的 AppID
 3. 使用 `explorer.exe shell:{AppID}` 格式启动应用
 
 ### macOS
+
 1. 使用 `mdfind -name "Meteor Master AI.app"` 检查系统是否安装了 Meteor Master AI
 2. 如果已安装，使用 `open -a "Meteor Master AI"` 启动应用
 

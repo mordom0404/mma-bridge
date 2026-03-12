@@ -15,23 +15,25 @@ npm install mma-bridge
 ### Check if Meteor Master AI is installed
 
 ```bash
-mma-bridge check
+mma check
 ```
 
 ### Launch Meteor Master AI
 
 ```bash
-mma-bridge start
+mma start
 ```
 
 ## How It Works
 
 ### Windows
+
 1. Check if Meteor Master AI is installed using PowerShell's `Get-StartApps` command
 2. If installed, extract the AppID
 3. Launch the application using `explorer.exe shell:{AppID}`
 
 ### macOS
+
 1. Check if Meteor Master AI is installed using `mdfind -name "Meteor Master AI.app"`
 2. If installed, launch the application using `open -a "Meteor Master AI"`
 
