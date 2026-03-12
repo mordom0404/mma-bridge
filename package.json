@@ -4,8 +4,8 @@
   "description": "Launch Meteor Master AI from Microsoft Store via CLI",
   "repository": {
     "type": "git",
-    "url": "https://github.com/mordom0404/mma-bridge.git",
-  }
+    "url": "https://github.com/mordom0404/mma-bridge.git"
+  },
   "main": "src/index.js",
   "bin": {
     "mma": "./src/cli.js"
