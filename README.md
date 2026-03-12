@@ -2,6 +2,8 @@
 
 Meteor Master AI Launcher - Quickly launch Meteor Master AI from the command line on Windows and macOS.
 
+[English Version](README.md) | [中文版本文档](README.zh-CN.md)
+
 ## Installation
 
 ```bash
