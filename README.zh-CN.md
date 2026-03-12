@@ -2,6 +2,8 @@
 
 Meteor Master AI 启动器 - 通过命令行快速启动 Windows 和 macOS 上的 Meteor Master AI 应用。
 
+**关于 MeteorMaster**：MeteorMaster 是一款强大的流星检测与分析工具。官网：https://photohelper.cn/meteormaster
+
 [English Version](README.md) | [中文版本文档](README.zh-CN.md)
 
 ## 安装
