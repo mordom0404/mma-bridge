@@ -1,52 +1,57 @@
 # mma-bridge
 
-Meteor Master AI 启动器 - 通过命令行快速启动微软商店中的 Meteor Master AI 应用。
+Meteor Master AI Launcher - Quickly launch Meteor Master AI from the command line on Windows and macOS.
 
-## 安装
+## Installation
 
 ```bash
 npm install mma-bridge
 ```
 
-## 使用
+## Usage
 
-### 检查是否安装了 Meteor Master AI
-
-```bash
-mma check
-```
-
-### 启动 Meteor Master AI
+### Check if Meteor Master AI is installed
 
 ```bash
-mma start
+mma-bridge check
 ```
 
-## 工作原理
+### Launch Meteor Master AI
 
-1. 通过 PowerShell 的 `Get-StartApps` 命令检查系统是否安装了 Meteor Master AI
-2. 如果已安装，提取应用的 AppID
-3. 使用 `explorer.exe shell:{AppID}` 格式启动应用
+```bash
+mma-bridge start
+```
 
-## 调试
+## How It Works
 
-程序包含详细的 console.log 输出，方便调试。可以通过以下方式查看详细日志：
+### Windows
+1. Check if Meteor Master AI is installed using PowerShell's `Get-StartApps` command
+2. If installed, extract the AppID
+3. Launch the application using `explorer.exe shell:{AppID}`
+
+### macOS
+1. Check if Meteor Master AI is installed using `mdfind -name "Meteor Master AI.app"`
+2. If installed, launch the application using `open -a "Meteor Master AI"`
+
+## Debugging
+
+The program includes detailed console.log output for debugging. You can view detailed logs by running:
 
 ```bash
 node node_modules/mma-bridge/src/cli.js start
 ```
 
-## 开发
+## Development
 
 ```bash
-# 克隆项目
-git clone <repository-url>
+# Clone the repository
+git clone https://github.com/mordom0404/mma-bridge.git
 cd mma-bridge
 
-# 安装依赖
+# Install dependencies (currently none required)
 npm install
 
-# 本地测试
+# Local testing
 npm link
 mma-bridge start
 ```
