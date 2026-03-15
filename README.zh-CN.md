@@ -4,6 +4,29 @@ Meteor Master AI 启动器 - 通过命令行快速启动 Windows 和 macOS 上�
 
 **关于 MeteorMaster**：MeteorMaster 是一款强大的流星检测与分析工具。官网：https://photohelper.cn/meteormaster
 
+## OpenClaw 和 Agent 集成
+
+mma-bridge 专为 OpenClaw 或类似的 AI agent 系统设计，用于快速接入 Meteor Master AI 的能力。通过 mma-bridge，agent 可以：
+
+- 自动检测和启动 Meteor Master AI 应用
+- 管理 Meteor Master AI 实例
+- 通过 RESTful API 调用 Meteor Master AI 的各项功能
+
+### 使用 Skill 集成
+
+要充分发挥 mma-bridge 的能力，需要配合相应的 Skill 使用。完整的 Skill 实现和文档请访问：
+
+**https://clawhub.ai/mordom0404/mma-bridge**
+
+该 Skill 提供了：
+
+- 预定义的 API 调用方法
+- 数据处理和转换功能
+- 错误处理和重试机制
+- 与 OpenClaw 框架的无缝集成
+
+通过结合 mma-bridge 和对应的 Skill，agent 可以轻松实现流星检测、数据分析和结果处理等功能。
+
 [English Version](https://github.com/mordom0404/mma-bridge/blob/master/README.md) | [中文版本文档](https://github.com/mordom0404/mma-bridge/blob/master/README.zh-CN.md)
 
 ## 安装
