@@ -348,8 +348,12 @@ async function handlePost(args) {
 
       // 检查解析后的数据中是否包含UUID字段
       if (data.uuid !== undefined) {
-        console.error("[ERROR] The --data parameter cannot contain UUID values");
-        console.error("UUIDs are not allowed in the data parameter for security reasons.");
+        console.error(
+          "[ERROR] The --data parameter cannot contain UUID values"
+        );
+        console.error(
+          "UUIDs are not allowed in the data parameter for security reasons."
+        );
         process.exit(1);
       }
     }
