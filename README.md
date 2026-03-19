@@ -50,6 +50,8 @@ Example output:
 
 ### Send API Requests
 
+> ⚠️ **Important**: Meteor Master AI only allows interaction through the `mma` command. Direct HTTP requests are not supported. This is the only official way to communicate with Meteor Master AI.
+
 Use the `post` command to send requests to the local API and get responses:
 
 ```bash
@@ -86,8 +88,6 @@ mma post --method someMethod --data-file data.json
 # Full example
 mma post --method getCurrentInfo --port 9000 --data-file data.json
 ```
-
-This command sends a POST request to `http://127.0.0.1:<port>/api/<methodName>` and returns the response in JSON format.
 
 ## How It Works
 

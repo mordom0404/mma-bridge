@@ -6,6 +6,9 @@ const fs = require("fs");
 const path = require("path");
 const os = require("os");
 
+const packageJson = require("../package.json");
+const MMA_BRIDGE_VERSION = packageJson.version;
+
 // 日志管理器类
 class LogManager {
   constructor(registryDir) {
@@ -404,6 +407,7 @@ async function handlePost(args) {
     const response = await axios.post(apiUrl, data, {
       headers: {
         "Content-Type": "application/json",
+        "X-MMA-Bridge": `mma-bridge/${MMA_BRIDGE_VERSION}`,
       },
     });
 
@@ -483,7 +487,12 @@ async function handleList() {
         const healthUrl = `http://127.0.0.1:${port}/health`;
         console.log(`[INFO] Checking health for port ${port}...`);
 
-        const response = await axios.post(healthUrl, { timeout: 3000 });
+        const response = await axios.post(healthUrl, {}, {
+          headers: {
+            "X-MMA-Bridge": `mma-bridge/${MMA_BRIDGE_VERSION}`,
+          },
+          timeout: 3000,
+        });
 
         // 检查响应是否为 { success: true }
         if (response.data && response.data.success === true) {

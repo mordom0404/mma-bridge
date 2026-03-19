@@ -72,6 +72,8 @@ mma list
 
 ### 发送 API 请求
 
+> ⚠️ **重要提示**：Meteor Master AI 仅允许通过 `mma` 命令进行交互，不支持直接 HTTP 请求。这是与 Meteor Master AI 通信的唯一官方方式。
+
 通过 `post` 命令向本地 API 发送请求并获取响应：
 
 ```bash
@@ -109,8 +111,6 @@ mma post --method someMethod --data-file data.json
 # 完整示例
 mma post --method getCurrentInfo --port 9000 --data-file data.json
 ```
-
-该命令会向 `http://127.0.0.1:<port>/api/<methodName>` 发送 POST 请求，并以 JSON 格式返回响应结果。
 
 ## 工作原理
 
