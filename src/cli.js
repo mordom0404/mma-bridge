@@ -327,13 +327,9 @@ async function handlePost(args) {
     } else if (args[i] === "--data" && i + 1 < args.length) {
       let dataStr = args[i + 1];
       try {
-        // 先尝试直接解析
         data = JSON.parse(dataStr);
       } catch (e) {
-        // 如果解析失败，尝试处理转义字符
-        // 将转义的引号恢复为正常的引号
         try {
-          // 移除所有反斜杠转义
           dataStr = dataStr.replace(/\\/g, "");
           data = JSON.parse(dataStr);
         } catch (parseError) {
@@ -346,29 +342,55 @@ async function handlePost(args) {
         }
       }
 
-      // 检查解析后的数据中是否包含UUID字段
       if (data.uuid !== undefined) {
-        console.error(
-          "[ERROR] The --data parameter cannot contain UUID values"
-        );
-        console.error(
-          "UUIDs are not allowed in the data parameter for security reasons."
-        );
+        console.error("[ERROR] The --data parameter cannot contain UUID values");
+        console.error("UUIDs are not allowed in the data parameter for security reasons.");
+        process.exit(1);
+      }
+    } else if (args[i] === "--data-file" && i + 1 < args.length) {
+      const filePath = args[i + 1];
+      try {
+        const fileContent = fs.readFileSync(filePath, "utf8");
+        data = JSON.parse(fileContent);
+      } catch (fileError) {
+        if (fileError.code === "ENOENT") {
+          console.error(`[ERROR] Data file not found: ${filePath}`);
+        } else if (fileError instanceof SyntaxError) {
+          console.error(`[ERROR] Invalid JSON in data file: ${filePath}`);
+          console.error(`[DEBUG] Parse error: ${fileError.message}`);
+        } else {
+          console.error(`[ERROR] Failed to read data file: ${fileError.message}`);
+        }
+        process.exit(1);
+      }
+
+      if (data.uuid !== undefined) {
+        console.error("[ERROR] The --data-file parameter cannot contain UUID values");
+        console.error("UUIDs are not allowed in the data parameter for security reasons.");
         process.exit(1);
       }
     }
   }
 
+  // 检查 --data 和 --data-file 是否同时使用
+  const dataArgIndex = args.indexOf("--data");
+  const dataFileArgIndex = args.indexOf("--data-file");
+  if (dataArgIndex !== -1 && dataFileArgIndex !== -1) {
+    console.error("[ERROR] Cannot use both --data and --data-file at the same time");
+    process.exit(1);
+  }
+
   if (!method) {
     console.error("[ERROR] --method parameter is required");
     console.error(
-      "Usage: mma post --method <methodName> [--port <port>] [--data '<json>']"
+      "Usage: mma post --method <methodName> [--port <port>] [--data '<json>' | --data-file <filePath>]"
     );
     console.error("Example: mma post --method getCurrentInfo");
     console.error("Example: mma post --method getCurrentInfo --port 9000");
     console.error(
       'Example: mma post --method someMethod --data \'{"key": "value"}\''
     );
+    console.error("Example: mma post --method someMethod --data-file data.json");
     process.exit(1);
   }
 
