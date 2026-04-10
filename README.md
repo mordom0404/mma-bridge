@@ -55,13 +55,13 @@ Example output:
 Use the `post` command to send requests to the local API and get responses:
 
 ```bash
-mma post --method <methodName> [--port <port>] --data-file <filePath>
+mma post --method <methodName> [--port <port>] [--data-file <filePath>]
 ```
 
 Parameters:
 - `--method`: Required, specifies the API method name
 - `--port`: Optional, specifies the port number, defaults to 9000
-- `--data-file`: Required, specifies the path to a JSON file containing request body data
+- `--data-file`: Optional, specifies the path to a JSON file containing request body data
 
 #### Usage
 

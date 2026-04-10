@@ -77,14 +77,14 @@ mma list
 通过 `post` 命令向本地 API 发送请求并获取响应：
 
 ```bash
-mma post --method <methodName> [--port <port>] --data-file <filePath>
+mma post --method <methodName> [--port <port>] [--data-file <filePath>]
 ```
 
 参数说明：
 
 - `--method`: 必需，指定 API 方法名称
 - `--port`: 可选，指定端口号，默认为 9000
-- `--data-file`: 必需，指定包含 JSON 数据的文件路径
+- `--data-file`: 可选，指定包含 JSON 数据的文件路径
 
 #### 使用方法
 
