@@ -386,13 +386,10 @@ async function handlePost(args) {
   if (!method) {
     console.error("[ERROR] --method parameter is required");
     console.error(
-      "Usage: mma post --method <methodName> [--port <port>] [--data '<json>' | --data-file <filePath>]"
+      "Usage: mma post --method <methodName> [--port <port>] [--data-file <filePath>]"
     );
     console.error("Example: mma post --method getCurrentInfo");
     console.error("Example: mma post --method getCurrentInfo --port 9000");
-    console.error(
-      'Example: mma post --method someMethod --data \'{"key": "value"}\''
-    );
     console.error("Example: mma post --method someMethod --data-file data.json");
     process.exit(1);
   }
