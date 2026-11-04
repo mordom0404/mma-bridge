@@ -652,16 +652,29 @@ async function handlePost(args) {
       process.exit(1);
     }
   } catch (error) {
-    if (error.code === "ECONNABORTED" || error.code === "ETIMEDOUT") {
+    if (error.code === "ECONNABORTED") {
+      // axios 自身超时（请求已送出、但服务端在 timeoutMs 内没回包）
       console.error("[ERROR] API request timed out after " + timeoutMs + "ms");
       console.error("[ERROR] The server may still be processing this request.");
+    } else if (error.code === "ETIMEDOUT") {
+      // 连接层超时：SYN 被静默丢弃（主机离线 / IP 不对 / 防火墙拦截），请求根本没送达服务端。
+      // ★ 不要沿用 axios 的 35s 文案 —— 实际等待由 OS 的 TCP 连接超时决定
+      //   （macOS / Windows 都约 21s，远早于 axios timeout），提示「服务端可能还在处理」是误导。
+      console.error("[ERROR] Connection timed out: no response from " + apiUrl);
+      console.error(
+        "[ERROR] The request was not delivered (host offline, wrong IP, or a firewall is blocking the port)."
+      );
+    } else if (error.code === "EHOSTUNREACH" || error.code === "ENETUNREACH") {
+      // 路由层不可达：本机到目标根本没有路由（不在同一 LAN / 网段配错），是瞬时失败而不是超时
+      console.error("[ERROR] Host unreachable (" + error.code + "): " + apiUrl);
+      console.error("[ERROR] Check that the Windows machine is on the same LAN and the IP is correct.");
     } else if (error.response) {
       console.error("[ERROR] API request failed with HTTP status " + error.response.status);
       if (error.response.data !== undefined) {
         console.log(JSON.stringify(error.response.data, null, 2));
       }
     } else if (error.request) {
-      console.error("[ERROR] No response received from API");
+      console.error("[ERROR] No response received from API" + (error.code ? " (" + error.code + ")" : ""));
       console.error(
         "[ERROR] Please make sure Meteor Master AI is running with MMABridge enabled on http://" +
           parsed.host +
