@@ -1,6 +1,8 @@
 # mma-bridge
 
-Meteor Master AI 启动器 - 通过命令行快速启动 Windows 和 macOS 上的 Meteor Master AI 应用。
+Meteor Master AI 启动器 & 命令行工具 - 通过命令行快速启动 Windows 和 macOS 上的 Meteor Master AI，并调用其本地 MMABridge API。
+
+**版本 2.0.0** · 需要支持 MMABridge 协议 **2.0.0** 的 Meteor Master AI 版本。
 
 **关于 MeteorMaster**：MeteorMaster 是一款强大的流星检测与分析工具。官网：https://photohelper.cn/meteormaster
 
@@ -32,8 +34,19 @@ mma-bridge 专为 OpenClaw 或类似的 AI agent 系统设计，用于快速接�
 ## 安装
 
 ```bash
-npm install mma-bridge
+npm install -g mma-bridge
 ```
+
+## ⚠️ 2.0.0 破坏性变更
+
+mma-bridge 2.0.0 使用 **v2 MMABridge 协议**，与 1.x **不兼容**：
+
+- 每个 `post` / `list` 请求都会携带版本头 `X-MMA-Bridge: mma-bridge/2.0.0` 和 `X-MMA-Skill: 2.0.0`。App 会校验版本：旧版 CLI（1.x）会被拒绝并返回 `OUTDATED_CLI` / `OUTDATED_SKILL`。
+- 回包统一为 v2 信封：成功 `{ "success": true, "message": "...", "data": ... }`；业务失败 `{ "success": false, "code": "...", "message": "...", "data": null }`（HTTP 仍可能是 200）。
+- `mma post` 在 `success:false` 时**退出码为 1**（JSON 仍打印到 stdout）；网络错误 / HTTP 错误同样退出码 1。
+- 隐藏的 `--data` 选项已**删除**，只保留 `--data-file <path>`。
+- `mma list` 探活失败时**不再删除**实例文件，只提示并保留。
+- CLI 日志已移出实例注册表目录，改到 `%TEMP%/MeteorMasterAI/mma-bridge-logs/`（见「日志」）。
 
 ## 使用
 
@@ -43,6 +56,8 @@ npm install mma-bridge
 mma check
 ```
 
+未安装时退出码为 1。
+
 ### 启动 Meteor Master AI
 
 ```bash
@@ -51,66 +66,107 @@ mma start
 
 ### 列出运行中的实例的端口
 
-使用 `list` 命令查看所有正在运行的 Meteor Master AI 实例端口：
-
 ```bash
 mma list
 ```
 
 该命令将执行以下操作：
 
-1. 检查实例注册表
-2. 验证每个实例的健康状态
-3. 删除注册表中的无效的实例
-4. 返回有效实例的端口列表
+1. 从 `%TEMP%/MeteorMasterAI/mma-bridge-registry/` 读取实例文件
+2. 通过 `POST /health` 检查每个实例的健康状态（3 秒超时）
+3. 探活失败的实例文件**保留不删**（只警告，避免误删正在启动/重启的 App）
+4. 输出 `Valid ports:` 及健康实例的端口
 
 示例输出：
 
-```json
-[9000, 9001]
+```text
+Valid ports: 9000 9002
 ```
 
 ### 发送 API 请求
 
 > ⚠️ **重要提示**：Meteor Master AI 仅允许通过 `mma` 命令进行交互，不支持直接 HTTP 请求。这是与 Meteor Master AI 通信的唯一官方方式。
 
-通过 `post` 命令向本地 API 发送请求并获取响应：
-
 ```bash
-mma post --method <methodName> [--port <port>] [--data-file <filePath>]
+mma post --method <methodName> [--port <port>] [--host <host>] [--token <token>] [--data-file <filePath>]
 ```
 
 参数说明：
 
-- `--method`: 必需，指定 API 方法名称
-- `--port`: 可选，指定端口号，默认为 9000
-- `--data-file`: 可选，指定包含 JSON 数据的文件路径
+- `--method`：**必需**，API 方法名称（共 15 个方法，见 skill 文档 `skill/references/api_spec.md`）
+- `--port`：可选，API 服务器端口，**1–65535** 的整数，默认 **9000**。同一台电脑有多个实例时，先用 `mma list` 查看端口，再用 `--port` 指定
+- `--host`：可选，App 所在机器的 IP（或主机名），默认 **127.0.0.1**。只有在 App 设置里打开了「允许局域网访问」并从**另一台设备**调用时才需要它
+- `--token`：可选，局域网访问令牌。也可以用环境变量 `MMA_BRIDGE_TOKEN` 传入（命令行优先）。令牌从 App 的「设置 → MMABridge → 允许局域网访问」里复制
+- `--data-file`：**可选**，JSON **对象**请求体文件路径。**省略等价于 `{}`**。请求体不能包含 `uuid` 字段（由服务端注入）
+
+响应会以 JSON 打印到 stdout；`success:false` 时退出码为 1。
+
+> **本机调用不需要 token**：App 只对「非本机来源」的请求要求令牌，从本机连 `127.0.0.1` 照常直接用即可。
 
 #### 使用方法
 
 ```bash
-# 第一步：将 JSON 数据保存到文件
-echo '{"pageIndex":0,"pageSize":10,"orderBy":2,"sort":"DESC","date":"2025-12-31"}' > data.json
+# 不需要参数时可以省略 --data-file
+mma post --method getCurrentInfo
 
-# 第二步：使用 --data-file 传递数据
+# 需要参数时先写 JSON 文件
+echo '{"orderBy":0,"sort":"DESC","pageSize":10,"pageIndex":1}' > data.json
 mma post --method getDataList --data-file data.json --port 9000
 ```
 
 #### 示例
 
 ```bash
-# 获取当前信息（使用默认端口9000）
+# 获取当前信息（默认端口 9000）
 mma post --method getCurrentInfo
 
 # 指定端口号
 mma post --method getCurrentInfo --port 9000
 
-# 使用 data-file 传递 JSON 数据
-mma post --method someMethod --data-file data.json
-
 # 完整示例
-mma post --method getCurrentInfo --port 9000 --data-file data.json
+echo '{"id":"12345"}' > data.json
+mma post --method getDataDetail --port 9000 --data-file data.json
 ```
+
+### 局域网访问
+
+在 App 的「设置 → MMABridge」里勾选「允许局域网访问」后，同一局域网内的其它设备可以调用本机：
+
+```bash
+# 从另一台设备调用（App 机器的 IP + 令牌）
+mma post --method getCurrentInfo --host 192.168.0.113 --port 9000 --token <token>
+
+# 或者用环境变量传令牌
+export MMA_BRIDGE_TOKEN=<token>
+mma post --method getCurrentInfo --host 192.168.0.113 --port 9000
+```
+
+说明：
+
+- 令牌在 App 设置页里明文显示，复制后用 `--token` 或 `MMA_BRIDGE_TOKEN` 传入；
+- 缺少或传错令牌 → HTTP **401** + `UNAUTHORIZED` 信封，CLI 退出码为 **1**，并额外打印一行提示告诉你去哪儿取令牌；
+- App 只监听本机（`127.0.0.1`）时，其它设备**连不上** —— 必须先在设置里打开「允许局域网访问」；
+- `mma list` 始终只发现**本机**实例（读本机临时目录里的实例文件），不接受 `--host`；
+- 端口在 9000–10000 之间漂移，远端保存的端口可能失效，用 `mma list` 或 App 设置页确认当前端口；
+- 浏览器不能直接调用：服务端会拒绝带 `Origin` 头的请求（防 DNS rebinding / CSRF）。
+
+### 帮助 / 版本
+
+```bash
+mma --help
+mma --version
+```
+
+`--version` 输出 CLI 版本（`2.0.0`）。这两个命令都不会创建日志会话。
+
+## 日志
+
+CLI 日志写入 `%TEMP%/MeteorMasterAI/mma-bridge-logs/`（`log-<时间戳>.log`），**不再写入**实例注册表目录，因此不会干扰 `mma list` 的实例发现。
+
+- 只有**实际执行命令**（`start` / `check` / `post` / `list`）才会创建一个日志文件；
+- `mma --help` / `mma --version` **不写**日志（在日志会话开始前就退出）。
+
+每次会话开始时按「最多 **30** 个文件（**含当前会话这个**）/ 最多 **7** 天」清理旧日志。
 
 ## 工作原理
 
@@ -127,10 +183,10 @@ mma post --method getCurrentInfo --port 9000 --data-file data.json
 
 ## 调试
 
-程序包含详细的 console.log 输出，方便调试。可以通过以下方式查看详细日志：
+程序包含详细的 console 输出，且每次实际执行命令（`start` / `check` / `post` / `list`）都会写入 `%TEMP%/MeteorMasterAI/mma-bridge-logs/`。也可以直接运行：
 
 ```bash
-node node_modules/mma-bridge/src/cli.js start
+node node_modules/mma-bridge/src/cli.js post --method getCurrentInfo
 ```
 
 ## 开发
@@ -140,12 +196,12 @@ node node_modules/mma-bridge/src/cli.js start
 git clone https://github.com/mordom0404/mma-bridge.git
 cd mma-bridge
 
-# 安装依赖（目前不需要）
+# 安装依赖
 npm install
 
 # 本地测试
 npm link
-mma start
+mma --version
 ```
 
 ## 许可证
