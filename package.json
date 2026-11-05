@@ -20,7 +20,7 @@
     "cli",
     "launcher"
   ],
-  "author": "mordom@foxmail.com",
+  "author": "mordom0404 <mordom@foxmail.com>",
   "license": "MIT",
   "engines": {
     "node": ">=14.0.0"
