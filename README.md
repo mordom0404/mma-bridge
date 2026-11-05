@@ -2,17 +2,62 @@
 
 Meteor Master AI Launcher & CLI - launch Meteor Master AI and call its local MMABridge API from the command line on Windows and macOS.
 
-**Version 2.0.0** · Requires a Meteor Master AI version that supports MMABridge protocol **2.0.0**.
+**Version 2.0.0** · Requires **Meteor Master AI ≥ 5.15.0** (v2 MMABridge protocol).
 
 **About MeteorMaster**: MeteorMaster is a powerful meteor detection and analysis tool. Visit the official website: https://photohelper.cn/meteormaster
 
+## Agent integration (OpenClaw skill)
+
+mma-bridge is designed for OpenClaw and similar AI agent systems. The recommended integration path is to install the matching skill as well:
+
+- Skill page (install command, API docs): **https://clawhub.ai/mordom0404/skills/mma-bridge**
+- Install the skill: `openclaw skills install @mordom0404/mma-bridge`
+
+The skill carries the version requirements, the first-run self-check below, and the documentation for all 15 API methods.
+
 [English Version](https://github.com/mordom0404/mma-bridge/blob/master/README.md) | [中文版本文档](https://github.com/mordom0404/mma-bridge/blob/master/README.zh-CN.md)
+
+## Requirements
+
+| Component | Required | Notes |
+|---|---|---|
+| Meteor Master AI (the App) | **≥ 5.15.0** | The v2 MMABridge protocol starts at App 5.15.0. Older Apps ship the v1 bridge, which this CLI does not support (see “Talking to an old App”). |
+| mma-bridge (this CLI) | **≥ 2.0.0** | Every request carries the `X-MMA-Bridge: mma-bridge/<version>` and `X-MMA-Skill: 2.0.0` headers, which the App validates. |
+| Node.js | ≥ 14 | |
+
+How to check the App version: it is displayed in the App's **main title bar**, right next to `Meteor Master AI` (e.g. `5.15.0`), or returned by `getCurrentInfo` as `data.appVersion`. If your store's latest version is still below 5.15.0, update the App first.
 
 ## Installation
 
 ```bash
-npm install -g mma-bridge
+# Pin the version and verify afterwards. A bare `npm install -g mma-bridge` silently installs an
+# old 1.x release if npm's `latest` tag is stale — every `mma post` would then be rejected with
+# OUTDATED_CLI.
+npm install -g mma-bridge@2.0.0
+mma --version   # must print 2.0.0 or higher
 ```
+
+Upgrading an existing install:
+
+```bash
+npm install -g mma-bridge@latest
+mma --version
+```
+
+## First-run self-check (new machines / agents)
+
+Run this once before calling any business method. If a step fails, stop and see “Troubleshooting”:
+
+1. `mma --version` → must be `2.0.0` or higher.
+2. `mma check` → confirms Meteor Master AI is installed. If it is not, install the App from the Microsoft Store / App Store first.
+3. `mma start` if the App is not running.
+4. `mma list` → wait until it prints `Valid ports:`. The bridge port may need **1–10 seconds** after launch, so retry once per second up to 10 times.
+5. `mma post --method getCurrentInfo` → verify all three:
+   - `data.bridgeProtocolVersion === "2.0.0"`;
+   - `data.appVersion` ≥ `5.15.0`;
+   - `data.supportMMABridgeMethods` contains all **15 methods** (including `adjustResult` / `addResult`).
+
+Only after these checks should you call business methods.
 
 ## ⚠️ Breaking changes in 2.0.0
 
@@ -24,6 +69,17 @@ mma-bridge 2.0.0 speaks the **v2 MMABridge protocol** and is **not compatible wi
 - The hidden `--data` option was **removed**. Use `--data-file <path>` only.
 - `mma list` no longer deletes instance files that fail the health check; it only warns and keeps them.
 - CLI logs moved out of the instance-registry directory to `%TEMP%/MeteorMasterAI/mma-bridge-logs/` (see “Logs”).
+
+### Talking to an old App (< 5.15.0)
+
+The v1 bridge (App 5.14.x and earlier) is **not version-gated**: it ignores the version headers, so requests may still “succeed” — but the contract is different:
+
+- the response envelope has **no `code` field**;
+- business failures are still reported as `success: true`, with the error text inside `data` (so `success` cannot be trusted);
+- `getCurrentInfo` has **no `bridgeProtocolVersion` / `minCliVersion` / `minSkillVersion`**, and `supportMMABridgeMethods` lists only 13 methods;
+- `adjustResult` / `addResult` do not exist and return `{success:false, message:"Request timeout or invalid request url"}` after ~5 seconds (again without `code`).
+
+Any of the above means **the App is too old**: ask the user to update Meteor Master AI to 5.15.0+ instead of retrying.
 
 ## Usage
 
@@ -133,6 +189,19 @@ mma --version
 ```
 
 `--version` prints the CLI version (`2.0.0`). Neither command creates a log session.
+
+## Troubleshooting
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| `OUTDATED_CLI` / `OUTDATED_SKILL` | The CLI (or the skill) is older than 2.0.0 | `npm install -g mma-bridge@latest` and verify with `mma --version`; update the skill with `openclaw skills install @mordom0404/mma-bridge` |
+| `mma list` prints no `Valid ports:` | App not running / MMABridge disabled / port not ready yet | `mma start`; enable *Settings → General → MMABridge*; retry `mma list` |
+| `ECONNREFUSED` | App not running, or MMABridge disabled | `mma start` and enable the switch |
+| `success:true` but the body contains an error string, or the envelope has no `code`, or `getCurrentInfo` lacks `bridgeProtocolVersion` | App < 5.15.0 (v1 bridge) | Update the App to 5.15.0+ (see “Talking to an old App”) |
+| `Request timeout or invalid request url` after ~5s, no `code` | v1 App (method does not exist) or a wrong method name | Check the App version; method names are case-sensitive (15 methods) |
+| HTTP 401 + `UNAUTHORIZED` | Missing/wrong LAN token, or the request carries an `Origin` header | Copy the token from *Settings → MMABridge → Allow LAN access* and pass `--token` / `MMA_BRIDGE_TOKEN`; browsers cannot call the API |
+| `ETIMEDOUT` (~21s) / `EHOSTUNREACH` | The connection was silently dropped (firewall) / host offline or wrong IP | Allow the App through the firewall / check the IP |
+| A saved port stopped working | The bridge port drifts within 9000–10000 | Re-check the current port with `mma list` or the App settings |
 
 ## Logs
 

@@ -2,40 +2,63 @@
 
 Meteor Master AI 启动器 & 命令行工具 - 通过命令行快速启动 Windows 和 macOS 上的 Meteor Master AI，并调用其本地 MMABridge API。
 
-**版本 2.0.0** · 需要支持 MMABridge 协议 **2.0.0** 的 Meteor Master AI 版本。
+**版本 2.0.0** · 需要 **Meteor Master AI ≥ 5.15.0**（v2 MMABridge 协议）。
 
 **关于 MeteorMaster**：MeteorMaster 是一款强大的流星检测与分析工具。官网：https://photohelper.cn/meteormaster
 
 ## OpenClaw 和 Agent 集成
 
-mma-bridge 专为 OpenClaw 或类似的 AI agent 系统设计，用于快速接入 Meteor Master AI 的能力。通过 mma-bridge，agent 可以：
+mma-bridge 专为 OpenClaw 或类似的 AI agent 系统设计，用于快速接入 Meteor Master AI 的能力。推荐配合对应的 Skill 一起使用：
 
-- 自动检测和启动 Meteor Master AI 应用
-- 管理 Meteor Master AI 实例
-- 通过 RESTful API 调用 Meteor Master AI 的各项功能
+- Skill 页面（安装命令、API 文档）：**https://clawhub.ai/mordom0404/skills/mma-bridge**
+- 安装 Skill：`openclaw skills install @mordom0404/mma-bridge`
 
-### 使用 Skill 集成
-
-要充分发挥 mma-bridge 的能力，需要配合相应的 Skill 使用。完整的 Skill 实现和文档请访问：
-
-**https://clawhub.ai/mordom0404/mma-bridge**
-
-该 Skill 提供了：
-
-- 预定义的 API 调用方法
-- 数据处理和转换功能
-- 错误处理和重试机制
-- 与 OpenClaw 框架的无缝集成
+该 Skill 写明了版本要求（App ≥ 5.15.0、CLI ≥ 2.0.0），包含下面的「首次接入自检」，并记录了全部 15 个 API 方法。
 
 通过结合 mma-bridge 和对应的 Skill，agent 可以轻松实现流星检测、数据分析和结果处理等功能。
 
 [English Version](https://github.com/mordom0404/mma-bridge/blob/master/README.md) | [中文版本文档](https://github.com/mordom0404/mma-bridge/blob/master/README.zh-CN.md)
 
+## 版本要求
+
+| 组件 | 要求 | 说明 |
+|---|---|---|
+| Meteor Master AI（App） | **≥ 5.15.0** | v2 MMABridge 协议从 App 5.15.0 起提供；更低的 App 是 v1 bridge，本 CLI **不支持**（见「连到旧版 App」） |
+| mma-bridge（本 CLI） | **≥ 2.0.0** | 每个请求都会带 `X-MMA-Bridge: mma-bridge/<版本>` 与 `X-MMA-Skill: 2.0.0` 版本头，由 App 校验 |
+| Node.js | ≥ 14 | |
+
+App 版本查看方式：显示在 App **主界面标题栏**里、`Meteor Master AI` 右侧（如 `5.15.0`）；也可以调用 `getCurrentInfo` 读 `data.appVersion`。如果应用商店里的最新版仍低于 5.15.0，请先更新 App。
+
 ## 安装
 
 ```bash
-npm install -g mma-bridge
+# 先钉版本再核对。如果 npm 的 latest 标签还指向旧版，只跑 `npm install -g mma-bridge`
+# 会静默装到 1.x，之后每次 `mma post` 都会被 App 以 OUTDATED_CLI 拒绝。
+npm install -g mma-bridge@2.0.0
+mma --version   # 必须输出 2.0.0 或更高
 ```
+
+升级已安装的旧版本：
+
+```bash
+npm install -g mma-bridge@latest
+mma --version
+```
+
+## 首次接入自检（新机器 / Agent 必做）
+
+第一次使用前先跑一遍，全部通过再调用业务方法；任一步失败请停下并看「常见失败」：
+
+1. `mma --version` → 必须为 `2.0.0` 或更高。
+2. `mma check` → 确认 Meteor Master AI 已安装；未安装请先从 Microsoft Store / App Store 安装。
+3. App 未运行则 `mma start`。
+4. `mma list` → 等到输出 `Valid ports:`。App 刚启动时 bridge 端口可能要 **1–10 秒** 才就绪，建议每秒重试一次、最多 10 次。
+5. `mma post --method getCurrentInfo` → 校验三项：
+   - `data.bridgeProtocolVersion === "2.0.0"`；
+   - `data.appVersion` ≥ `5.15.0`；
+   - `data.supportMMABridgeMethods` 含全部 **15 个方法**（含 `adjustResult` / `addResult`）。
+
+全部满足后再调用业务方法。
 
 ## ⚠️ 2.0.0 破坏性变更
 
@@ -47,6 +70,17 @@ mma-bridge 2.0.0 使用 **v2 MMABridge 协议**，与 1.x **不兼容**：
 - 隐藏的 `--data` 选项已**删除**，只保留 `--data-file <path>`。
 - `mma list` 探活失败时**不再删除**实例文件，只提示并保留。
 - CLI 日志已移出实例注册表目录，改到 `%TEMP%/MeteorMasterAI/mma-bridge-logs/`（见「日志」）。
+
+### 连到旧版 App（< 5.15.0）
+
+v1 bridge（App 5.14.x 及更早）**不校验版本头**：请求可能照样「成功」，但契约完全不同：
+
+- 回包**没有 `code` 字段**；
+- 业务失败仍以 `success: true` 返回，错误信息塞在 `data` 里（`success` 不可信）；
+- `getCurrentInfo` 里**没有 `bridgeProtocolVersion` / `minCliVersion` / `minSkillVersion`**，`supportMMABridgeMethods` 只有 13 个方法；
+- `adjustResult` / `addResult` 不存在，约 5 秒后返回 `{success:false, message:"Request timeout or invalid request url"}`（同样没有 `code`）。
+
+出现任意一条都说明 **App 太旧**：请让用户把 Meteor Master AI 更新到 5.15.0+，不要重试。
 
 ## 使用
 
@@ -158,6 +192,19 @@ mma --version
 ```
 
 `--version` 输出 CLI 版本（`2.0.0`）。这两个命令都不会创建日志会话。
+
+## 常见失败
+
+| 现象 | 原因 | 处理 |
+|---|---|---|
+| `OUTDATED_CLI` / `OUTDATED_SKILL` | CLI（或 skill）低于 2.0.0 | `npm install -g mma-bridge@latest`，用 `mma --version` 核对；skill 用 `openclaw skills install @mordom0404/mma-bridge` 升级 |
+| `mma list` 一直没有 `Valid ports:` | App 没运行 / 没启用 MMABridge / 端口还没就绪 | `mma start`；在「设置 → 通用设置 → MMABridge」启用；再重试 `mma list` |
+| `ECONNREFUSED` | App 没运行 / 没启用 MMABridge | `mma start` + 打开开关 |
+| `success:true` 但 body 里是错误字符串，或回包没有 `code`，或 `getCurrentInfo` 没有 `bridgeProtocolVersion` | App < 5.15.0（v1 bridge） | 把 App 更新到 5.15.0+（见「连到旧版 App」） |
+| 约 5 秒后返回 `Request timeout or invalid request url` 且无 `code` | 旧版 App（方法不存在）或方法名写错 | 先确认 App 版本；方法名大小写敏感（共 15 个） |
+| HTTP 401 + `UNAUTHORIZED` | 缺少/错误令牌，或请求带了 `Origin` 头 | 从「设置 → MMABridge → 允许局域网访问」复制令牌，用 `--token` / `MMA_BRIDGE_TOKEN` 传入；浏览器不能直接调用 |
+| `ETIMEDOUT`（约 21 秒）/ `EHOSTUNREACH` | 连接被防火墙静默丢弃 / 主机离线或 IP 不对 | 允许 App 通过防火墙 / 核对 IP |
+| 之前能用的端口突然不通 | bridge 端口在 9000–10000 间漂移 | 用 `mma list` 或 App 设置页确认当前端口 |
 
 ## 日志
 
